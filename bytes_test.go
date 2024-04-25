@@ -98,6 +98,14 @@ var parseIntTests = []ParseIntTest{
 		isErr:      true,
 		isOverflow: true,
 	},
+	{
+		in:    "00",
+		isErr: true,
+	},
+	{
+		in:    "010",
+		isErr: true,
+	},
 }
 
 func TestBytesParseInt(t *testing.T) {
