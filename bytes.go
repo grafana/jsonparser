@@ -22,7 +22,7 @@ func parseInt(bytes []byte) (v int64, ok bool, overflow bool) {
 			return 0, false, false
 		}
 		// Deal with invalid data such as "00"
-		if c == '0' && n == 0 && idx != 0 {
+		if n == 0 && idx != 0 {
 			return 0, false, false
 		}
 		if n > maxUint64/10 {
