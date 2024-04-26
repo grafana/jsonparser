@@ -712,12 +712,10 @@ func WriteToBuffer(buffer []byte, str string) int {
 }
 
 /*
-
 Del - Receives existing data structure, path to delete.
 
 Returns:
 `data` - return modified data
-
 */
 func Delete(data []byte, keys ...string) []byte {
 	lk := len(keys)
@@ -798,13 +796,11 @@ func Delete(data []byte, keys ...string) []byte {
 }
 
 /*
-
 Set - Receives existing data structure, path to set, and data to set at that key.
 
 Returns:
 `value` - modified byte array
 `err` - On any parsing error
-
 */
 func Set(data []byte, setValue []byte, keys ...string) (value []byte, err error) {
 	// ensure keys are set
@@ -1103,6 +1099,7 @@ func ObjectEach(data []byte, callback func(key []byte, value []byte, dataType Va
 		return nil
 	}
 
+	var lastCommaIdx = -1
 	// Loop pre-condition: data[offset] points to what should be either the next entry's key, or the closing brace (if it's anything else, the JSON is malformed)
 	for offset < len(data) {
 		// Step 1: find the next key
@@ -1113,6 +1110,10 @@ func ObjectEach(data []byte, callback func(key []byte, value []byte, dataType Va
 		case '"':
 			offset++ // accept as string and skip opening quote
 		case '}':
+			if lastCommaIdx != -1 && lastCommaIdx+1 == offset {
+				// e.g. { "": 12,}
+				return MalformedObjectError
+			}
 			return nil // we found the end of the object; stop and return success
 		default:
 			return MalformedObjectError
@@ -1164,6 +1165,7 @@ func ObjectEach(data []byte, callback func(key []byte, value []byte, dataType Va
 			case '}':
 				return nil // Stop if we hit the close brace
 			case ',':
+				lastCommaIdx = offset
 				offset++ // Ignore the comma
 			default:
 				return MalformedObjectError
@@ -1174,6 +1176,10 @@ func ObjectEach(data []byte, callback func(key []byte, value []byte, dataType Va
 		if off := nextToken(data[offset:]); off == -1 {
 			return MalformedArrayError
 		} else {
+			if off > 0 {
+				// advance lastCommaIdx to skip to the next token
+				lastCommaIdx += off - 1
+			}
 			offset += off
 		}
 	}
