@@ -1110,8 +1110,9 @@ func ObjectEach(data []byte, callback func(key []byte, value []byte, dataType Va
 		case '"':
 			offset++ // accept as string and skip opening quote
 		case '}':
+			// Detect if the previous token was a comma. For rxample: { "": 12,}
 			if lastCommaIdx != -1 && lastCommaIdx+1 == offset {
-				// e.g. { "": 12,}
+
 				return MalformedObjectError
 			}
 			return nil // we found the end of the object; stop and return success
