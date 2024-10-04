@@ -1498,10 +1498,10 @@ func TestArrayEachEmpty(t *testing.T) {
 	}{
 		{"Empty array", args{[]byte("[]"), funcError, []string{}}, 1, false},
 		{"Empty array with space", args{[]byte("[ ]"), funcError, []string{}}, 2, false},
-		{"Empty array with \n", args{[]byte("[\n]"), funcError, []string{}}, 2, false},
+		{"Empty array with newline", args{[]byte("[\n]"), funcError, []string{}}, 2, false},
 		{"Empty field array", args{[]byte("{\"data\": []}"), funcError, []string{"data"}}, 10, false},
 		{"Empty field array with space", args{[]byte("{\"data\": [ ]}"), funcError, []string{"data"}}, 11, false},
-		{"Empty field array with \n", args{[]byte("{\"data\": [\n]}"), funcError, []string{"data"}}, 11, false},
+		{"Empty field array with newline", args{[]byte("{\"data\": [\n]}"), funcError, []string{"data"}}, 11, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1708,89 +1708,80 @@ var testJson = []byte(`{
 }`)
 
 func TestEachKey(t *testing.T) {
-	paths := [][]string{
-		{"name"},
-		{"order"},
-		{"nested", "a"},
-		{"nested", "b"},
-		{"nested2", "a"},
-		{"nested", "nested3", "b"},
-		{"arr", "[1]", "b"},
-		{"arrInt", "[3]"},
-		{"arrInt", "[5]"}, // Should not find last key
-		{"nested"},
-		{"arr", "["},    // issue#177 Invalid arguments
-		{"a\n", "b\n"},  // issue#165
-		{"nested", "b"}, // Should find repeated key
-		{"arrString", "[1]"},
+	tc := []struct {
+		path     []string
+		expected string
+		notFound bool
+	}{
+		{
+			path:     []string{"name"},
+			expected: "Name",
+		}, {
+			path:     []string{"order"},
+			expected: "Order",
+		}, {
+			path:     []string{"nested", "a"},
+			expected: "test",
+		}, {
+			path:     []string{"nested", "b"},
+			expected: "2",
+		}, {
+			path:     []string{"nested2", "a"},
+			expected: "test2",
+		}, {
+			path:     []string{"nested", "nested3", "b"},
+			expected: "4",
+		}, {
+			path:     []string{"arr", "[1]", "b"},
+			expected: "2",
+		}, {
+			path:     []string{"arrInt", "[3]"},
+			expected: "4",
+		}, {
+			path:     []string{"arrInt", "[5]"}, // Should not find last key
+			notFound: true,
+		}, {
+			path:     []string{"nested"},
+			expected: `{"a":"test", "b":2, "nested3":{"a":"test3","b":4}, "c": "unknown"}`,
+		}, {
+			path:     []string{"arr", "["}, // issue#177 Invalid arguments
+			notFound: true,
+		}, {
+			path:     []string{"a\n", "b\n"}, // issue#165
+			expected: "99",
+		}, {
+			path:     []string{"nested", "b"}, // Should find repeated key
+			expected: "2",
+		}, {
+			path:     []string{"arrString", "[1]"},
+			expected: "b",
+		}, {
+			path:     []string{"arrString", "[]"}, // [] is equal to [0]
+			expected: "a",
+		}, {
+			path:     []string{"arrString", ""},
+			notFound: true,
+		},
 	}
 
-	keysFound := 0
+	paths := make([][]string, 0, len(tc))
+	for idx := range tc {
+		paths = append(paths, tc[idx].path)
+	}
 
 	EachKey(testJson, func(idx int, value []byte, vt ValueType, err error) {
-		keysFound++
-
-		switch idx {
-		case 0:
-			if string(value) != "Name" {
-				t.Error("Should find 0 key", string(value))
+		if idx >= len(tc) {
+			t.Errorf("Only %d keys specified, got key for non-existent test case %v", len(paths), idx)
+		}
+		if tc[idx].notFound {
+			t.Errorf("Found key %+v that should not be found; got: %s", tc[idx].path, string(value))
+		} else {
+			if string(value) != tc[idx].expected {
+				t.Errorf("Should find key %+v with value %s; got: %s", tc[idx].path, string(value), tc[idx].expected)
 			}
-		case 1:
-			if string(value) != "Order" {
-				t.Errorf("Should find 1 key")
-			}
-		case 2:
-			if string(value) != "test" {
-				t.Errorf("Should find 2 key")
-			}
-		case 3:
-			if string(value) != "2" {
-				t.Errorf("Should find 3 key")
-			}
-		case 4:
-			if string(value) != "test2" {
-				t.Error("Should find 4 key", string(value))
-			}
-		case 5:
-			if string(value) != "4" {
-				t.Errorf("Should find 5 key")
-			}
-		case 6:
-			if string(value) != "2" {
-				t.Errorf("Should find 6 key")
-			}
-		case 7:
-			if string(value) != "4" {
-				t.Error("Should find 7 key", string(value))
-			}
-		case 8:
-			t.Errorf("Found key #8 that should not be found")
-		case 9:
-			if string(value) != `{"a":"test", "b":2, "nested3":{"a":"test3","b":4}, "c": "unknown"}` {
-				t.Error("Should find 9 key", string(value))
-			}
-		case 10:
-			t.Errorf("Found key #10 that should not be found")
-		case 11:
-			if string(value) != "99" {
-				t.Error("Should find 11 key", string(value))
-			}
-		case 12:
-			if string(value) != "2" {
-				t.Error("Should find 12 key", string(value))
-			}
-		case 13:
-			if string(value) != "b" {
-				t.Errorf("Should find 11 key")
-			}
-		default:
-			t.Errorf("Only %v keys specified, got key for non-existent index %v", len(paths), idx)
 		}
 	}, paths...)
 
-	if keysFound != 12 {
-		t.Errorf("Should find 12 keys: %d", keysFound)
-	}
 }
 
 type ParseTest struct {
