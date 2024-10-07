@@ -1099,6 +1099,7 @@ func ObjectEach(data []byte, callback func(key []byte, value []byte, dataType Va
 		return nil
 	}
 
+	var lastCommaIdx = -1
 	// Loop pre-condition: data[offset] points to what should be either the next entry's key, or the closing brace (if it's anything else, the JSON is malformed)
 	for offset < len(data) {
 		// Step 1: find the next key
@@ -1109,6 +1110,11 @@ func ObjectEach(data []byte, callback func(key []byte, value []byte, dataType Va
 		case '"':
 			offset++ // accept as string and skip opening quote
 		case '}':
+			// Detect if the previous token was a comma. For rxample: { "": 12,}
+			if lastCommaIdx != -1 && lastCommaIdx+1 == offset {
+
+				return MalformedObjectError
+			}
 			return nil // we found the end of the object; stop and return success
 		default:
 			return MalformedObjectError
@@ -1160,6 +1166,7 @@ func ObjectEach(data []byte, callback func(key []byte, value []byte, dataType Va
 			case '}':
 				return nil // Stop if we hit the close brace
 			case ',':
+				lastCommaIdx = offset
 				offset++ // Ignore the comma
 			default:
 				return MalformedObjectError
@@ -1170,6 +1177,10 @@ func ObjectEach(data []byte, callback func(key []byte, value []byte, dataType Va
 		if off := nextToken(data[offset:]); off == -1 {
 			return MalformedArrayError
 		} else {
+			if off > 0 {
+				// advance lastCommaIdx to skip to the next token
+				lastCommaIdx += off - 1
+			}
 			offset += off
 		}
 	}
