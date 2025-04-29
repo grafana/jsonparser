@@ -2,17 +2,20 @@ name: CIFuzz
 on: [pull_request]
 jobs:
   Fuzzing:
+    permissions:
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     steps:
     - name: Build Fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@1b73904cfccf3addafb6d599b8e0f32e710790cc
       with:
         oss-fuzz-project-name: 'jsonparser'
         dry-run: false
         language: go
     - name: Run Fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@1b73904cfccf3addafb6d599b8e0f32e710790cc
       with:
         oss-fuzz-project-name: 'jsonparser'
         fuzz-seconds: 600
