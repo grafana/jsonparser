@@ -271,7 +271,7 @@ func searchKeys(data []byte, keys ...string) int {
 				}
 
 				if level <= len(keys) {
-					if equalStr(keyUnesc, keys[level-1]) {
+					if string(keyUnesc) == keys[level-1] {
 						lastMatched = true
 
 						// if key level match
@@ -452,7 +452,7 @@ func EachKey(data []byte, cb func(int, []byte, ValueType, error), paths ...[]str
 
 					pathsBuf[level-1] = bytesToString(&keyUnesc)
 					for pi, p := range paths {
-						if len(p) != level || pathFlags[pi] || !equalStr(keyUnesc, p[level-1]) || !sameTree(p, pathsBuf[:level]) {
+						if len(p) != level || pathFlags[pi] || string(keyUnesc) != p[level-1] || !sameTree(p, pathsBuf[:level]) {
 							continue
 						}
 

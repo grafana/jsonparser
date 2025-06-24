@@ -10,10 +10,6 @@ import (
 	"unsafe"
 )
 
-func equalStr(b []byte, s string) bool {
-	return string(b) == s
-}
-
 func parseFloat(b *[]byte) (float64, error) {
 	return strconv.ParseFloat(*(*string)(unsafe.Pointer(b)), 64)
 }
