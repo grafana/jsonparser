@@ -443,6 +443,14 @@ var setTests = []SetTest{
 		setData: `"new object"`,
 		data:    `{"test":{"key":[{"innerKey":"innerKeyValue", "innerKey2":"innerKeyValue2"},{"newInnerKey":"new object"}]}}`,
 	},
+	{
+		desc:    "set unknown key (simple object within nested array, with empty path)",
+		json:    `{"key":"val-obj1"}`,
+		isFound: true,
+		path:    []string{"key", ""},
+		setData: `"new object"`,
+		data:    `{"key":{"":"new object"}}`,
+	},
 }
 
 var getTests = []GetTest{
