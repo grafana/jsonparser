@@ -620,7 +620,10 @@ var (
 )
 
 func createInsertComponent(keys []string, setValue []byte, comma, object bool) []byte {
-	isIndex := string(keys[0][0]) == "["
+	isIndex := false
+	if len(keys) > 0 && len(keys[0]) > 0 {
+		isIndex = string(keys[0][0]) == "["
+	}
 	offset := 0
 	lk := calcAllocateSpace(keys, setValue, comma, object)
 	buffer := make([]byte, lk, lk)
@@ -667,7 +670,10 @@ func createInsertComponent(keys []string, setValue []byte, comma, object bool) [
 }
 
 func calcAllocateSpace(keys []string, setValue []byte, comma, object bool) int {
-	isIndex := string(keys[0][0]) == "["
+	isIndex := false
+	if len(keys) > 0 && len(keys[0]) > 0 {
+		isIndex = string(keys[0][0]) == "["
+	}
 	lk := 0
 	if comma {
 		// ,
