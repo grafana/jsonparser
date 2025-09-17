@@ -1638,6 +1638,11 @@ var objectEachTests = []ObjectEachTest{
 		json:  `{"key": "value",, "key2": "value2"}`,
 		isErr: true,
 	},
+	{
+		desc:  "bad value (extra comma)",
+		json:  `{"":[],}`,
+		isErr: true,
+	},
 }
 
 func TestObjectEach(t *testing.T) {
