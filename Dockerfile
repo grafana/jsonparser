@@ -1,4 +1,4 @@
-FROM golang:1.6
+FROM golang:1.6@sha256:29116f0f6cd2ef6a882639ee222ccb6e2f6d88a1d97d461aaf4c4a2622d252a1
 
 RUN go get github.com/Jeffail/gabs
 RUN go get github.com/bitly/go-simplejson
