@@ -9,13 +9,13 @@ jobs:
     steps:
     - name: Build Fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@1b73904cfccf3addafb6d599b8e0f32e710790cc
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@c12c5beeb500f846cb16839562c3edfd8a4bf095
       with:
         oss-fuzz-project-name: 'jsonparser'
         dry-run: false
         language: go
     - name: Run Fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@1b73904cfccf3addafb6d599b8e0f32e710790cc
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@c12c5beeb500f846cb16839562c3edfd8a4bf095
       with:
         oss-fuzz-project-name: 'jsonparser'
         fuzz-seconds: 600
