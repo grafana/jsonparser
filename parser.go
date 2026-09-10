@@ -158,32 +158,64 @@ func lastToken(data []byte) int {
 
 // Tries to find the end of string
 // Support if string contains escaped quote symbols.
+//
+// Returns the offset just past the closing quote, and whether the string
+// contained any backslash before it (i.e. whether the caller must unescape).
+//
+// ObjectEach calls this once per key and once per string value, and passes the
+// whole remainder of the document each time, so the usual shape is "very long
+// slice, closing quote a few bytes in". A short scalar probe covers that
+// without paying for a call into bytes.IndexByte, which is assembly and not
+// inlined; only when the string runs past the probe is the SIMD scan worth it.
+// probeLen was picked by benchmarking 4/8/12/16 against real log lines.
 func stringEnd(data []byte) (int, bool) {
-	escaped := false
-	for i, c := range data {
-		if c == '"' {
-			if !escaped {
-				return i + 1, false
-			} else {
-				j := i - 1
-				for {
-					if j < 0 || data[j] != '\\' {
-						return i + 1, true // even number of backslashes
-					}
-					j--
-					if j < 0 || data[j] != '\\' {
-						break // odd number of backslashes
-					}
-					j--
+	const probeLen = 12
 
-				}
-			}
-		} else if c == '\\' {
-			escaped = true
+	probe := probeLen
+	if len(data) < probe {
+		probe = len(data)
+	}
+	for i := 0; i < probe; i++ {
+		switch data[i] {
+		case '"':
+			return i + 1, false
+		case '\\':
+			return stringEndEscaped(data, i)
 		}
 	}
+	if len(data) <= probeLen {
+		return -1, false
+	}
 
-	return -1, escaped
+	rest := data[probeLen:]
+	quote := bytes.IndexByte(rest, '"')
+	if quote < 0 {
+		// Unterminated. Report whether an unescape would have been needed.
+		return -1, bytes.IndexByte(rest, '\\') >= 0
+	}
+	if bytes.IndexByte(rest[:quote], '\\') < 0 {
+		return probeLen + quote + 1, false
+	}
+	return stringEndEscaped(data, probeLen)
+}
+
+// stringEndEscaped resumes the scan once a backslash is known to precede the
+// closing quote. A quote terminates the string only when preceded by an even
+// number of consecutive backslashes.
+func stringEndEscaped(data []byte, from int) (int, bool) {
+	for i := from; i < len(data); i++ {
+		if data[i] != '"' {
+			continue
+		}
+		backslashes := 0
+		for j := i - 1; j >= 0 && data[j] == '\\'; j-- {
+			backslashes++
+		}
+		if backslashes%2 == 0 {
+			return i + 1, true
+		}
+	}
+	return -1, true
 }
 
 // Find end of the data structure, array or object.
