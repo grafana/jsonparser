@@ -47,6 +47,16 @@ func BenchmarkStringEnd_WithEscape(b *testing.B) {
 	}
 }
 
+func BenchmarkStringEnd_WithEscape_Long(b *testing.B) {
+	// A long string which should benefit from the SWAR loop, but the string contains many escaped newlines.
+	data := []byte(`Unhandled exception processing order 8812\n\tat com.example.orders.OrderService.process(OrderService.java:214)\n\tat com.example.orders.OrderController.create(OrderController.java:88)\n\tat jdk.internal.reflect.GeneratedMethodAccessor112.invoke(Unknown Source)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:205)\n\tat org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:197)\nCaused by: java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30000ms.\n\t... 42 common frames omitted\n"`)
+	b.SetBytes(int64(len(data)))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = stringEnd(data)
+	}
+}
+
 // --- tokenEnd ---------------------------------------------------------------
 // Common case: a bare scalar value (number, boolean, null) terminated by a
 // delimiter. The fast path uses bytes.IndexAny (SIMD) to find it.
