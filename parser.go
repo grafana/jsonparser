@@ -377,6 +377,8 @@ func blockEnd(data []byte, openSym byte, closeSym byte) int {
 	return blockEndConfig(DefaultConfig, data, openSym, closeSym)
 }
 
+var structural [256]bool = [256]bool{'"': true, '\'': true, '[': true, ']': true, '{': true, '}': true}
+
 // SYS-REQ-115
 func blockEndConfig(config Config, data []byte, openSym byte, closeSym byte) int {
 	level := 0
@@ -385,25 +387,10 @@ func blockEndConfig(config Config, data []byte, openSym byte, closeSym byte) int
 
 	for i < ln {
 		// Fast-skip non-structural bytes before dispatching to the switch.
-		// Two categories are skipped in bulk with a single comparison each:
-		//  1. Control/whitespace bytes (<= 0x20): indentation, spaces, newlines.
-		//  2. Bytes > 0x5C that are not the open/close symbol: lowercase letters
-		//     (true/false/null), and high UTF-8 bytes.
-		// The open/close symbols themselves (e.g. '{'=0x7B, '}'=0x7D, ']'=0x5D)
-		// are > 0x5C and must NOT be skipped, hence the explicit exclusions.
-		// '"' (0x22), '\'' (0x27) and '[' (0x5B) are <= 0x5C so they are never
-		// caught by the second clause and always reach the switch.
-		for i < ln {
-			c := data[i]
-			if c <= ' ' {
-				i++
-				continue
+		for ; i < ln; i++ {
+			if structural[data[i]] {
+				break
 			}
-			if c > '\\' && c != openSym && c != closeSym {
-				i++
-				continue
-			}
-			break
 		}
 		if i >= ln {
 			break
